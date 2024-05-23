@@ -205,8 +205,13 @@ void get_data(const std::vector<std::string>&table,const std::vector<std::string
         }
         if(flag){
             if(attribute[0]=="*"){
-                cout<<it[0]<<" "<<it[1]<<" "<<it[2]<<" "<<it[3]
-                <<" "<<it[4]<<" "<<it[5]<<" "<<it[6]<<" "<<endl;
+                for(int i=0;i<7;i++){
+                    if(it[i]!=""){
+                        cout<<it[i];
+                        cout<<" ";
+                    }
+                }
+                cout<<endl;
             }
             else {
                 for(int i=0;i<attribute.size();i++){
@@ -220,6 +225,198 @@ void get_data(const std::vector<std::string>&table,const std::vector<std::string
                 }
                 cout<<endl;
             }
+        }
+    }
+   }
+   else{
+    for(auto&it1:TABLE[table[0]]){
+        for(auto&it2:TABLE[table[1]]){
+            int flag = 1;
+            for(auto&w:where){
+                 vector<string>t;
+            if(w.find("!=")!=-1){
+                t = splitString_str(w,"=");
+                string x=t[0],y=t[1];
+                string xx,yy;
+                vector<string>xt = splitString(x,'.');
+                vector<string>yt = splitString(y,'.');
+                if(xt.size()==1){
+                    xx = it1[mp[xt[0]]] != "" ? it1[mp[xt[0]]]:it2[mp[xt[0]]];
+                }
+                else {
+                    if(xt[0]==table[0])xx=it1[mp[xt[1]]];
+                    else xx=it2[mp[xt[1]]];
+                }
+                if(yt.size()==1){
+                    yy = it1[mp[yt[0]]] != "" ? it1[mp[yt[0]]]:it2[mp[yt[0]]];
+                }
+                else {
+                    if(yt[0]==table[0])yy=it1[mp[yt[1]]];
+                    else yy=it2[mp[yt[1]]];
+                }
+                if(xx==yy){
+                    flag=0;
+                    break;
+                }
+            }
+            else if(w.find(">=")!=-1){
+                 t = splitString_str(w,"=");
+                string x=t[0],y=t[1];
+                string xx,yy;
+                vector<string>xt = splitString(x,'.');
+                vector<string>yt = splitString(y,'.');
+                if(xt.size()==1){
+                    xx = it1[mp[xt[0]]] != "" ? it1[mp[xt[0]]]:it2[mp[xt[0]]];
+                }
+                else {
+                    if(xt[0]==table[0])xx=it1[mp[xt[1]]];
+                    else xx=it2[mp[xt[1]]];
+                }
+                if(yt.size()==1){
+                    yy = it1[mp[yt[0]]] != "" ? it1[mp[yt[0]]]:it2[mp[yt[0]]];
+                }
+                else {
+                    if(yt[0]==table[0])yy=it1[mp[yt[1]]];
+                    else yy=it2[mp[yt[1]]];
+                }
+                if(stoll(xx)<stoll(yy)){
+                    flag=0;
+                    break;
+                }
+            }
+            else if(w.find("<=")!=-1){
+                t = splitString_str(w,"=");
+                string x=t[0],y=t[1];
+                string xx,yy;
+                vector<string>xt = splitString(x,'.');
+                vector<string>yt = splitString(y,'.');
+                if(xt.size()==1){
+                    xx = it1[mp[xt[0]]] != "" ? it1[mp[xt[0]]]:it2[mp[xt[0]]];
+                }
+                else {
+                    if(xt[0]==table[0])xx=it1[mp[xt[1]]];
+                    else xx=it2[mp[xt[1]]];
+                }
+                if(yt.size()==1){
+                    yy = it1[mp[yt[0]]] != "" ? it1[mp[yt[0]]]:it2[mp[yt[0]]];
+                }
+                else {
+                    if(yt[0]==table[0])yy=it1[mp[yt[1]]];
+                    else yy=it2[mp[yt[1]]];
+                }
+                if(stoll(xx)>stoll(yy)){
+                    flag=0;
+                    break;
+                }
+            }
+            else if(w.find("=")!=-1){
+                t = splitString_str(w,"=");
+                string x=t[0],y=t[1];
+                string xx,yy;
+                vector<string>xt = splitString(x,'.');
+                vector<string>yt = splitString(y,'.');
+                if(xt.size()==1){
+                    xx = it1[mp[xt[0]]] != "" ? it1[mp[xt[0]]]:it2[mp[xt[0]]];
+                }
+                else {
+                    if(xt[0]==table[0])xx=it1[mp[xt[1]]];
+                    else xx=it2[mp[xt[1]]];
+                }
+                if(yt.size()==1){
+                    yy = it1[mp[yt[0]]] != "" ? it1[mp[yt[0]]]:it2[mp[yt[0]]];
+                }
+                else {
+                    if(yt[0]==table[0])yy=it1[mp[yt[1]]];
+                    else yy=it2[mp[yt[1]]];
+                }
+                if(xx!=yy){
+                    flag=0;
+                    break;
+                }
+            }
+            else if(w.find(">")!=-1){
+                t = splitString_str(w,"=");
+                string x=t[0],y=t[1];
+                string xx,yy;
+                vector<string>xt = splitString(x,'.');
+                vector<string>yt = splitString(y,'.');
+                if(xt.size()==1){
+                    xx = it1[mp[xt[0]]] != "" ? it1[mp[xt[0]]]:it2[mp[xt[0]]];
+                }
+                else {
+                    if(xt[0]==table[0])xx=it1[mp[xt[1]]];
+                    else xx=it2[mp[xt[1]]];
+                }
+                if(yt.size()==1){
+                    yy = it1[mp[yt[0]]] != "" ? it1[mp[yt[0]]]:it2[mp[yt[0]]];
+                }
+                else {
+                    if(yt[0]==table[0])yy=it1[mp[yt[1]]];
+                    else yy=it2[mp[yt[1]]];
+                }
+                if(stoll(xx)<=stoll(yy)){
+                    flag=0;
+                    break;
+                }
+            }
+            else if(w.find("<")!=-1){
+                 t = splitString_str(w,"=");
+                string x=t[0],y=t[1];
+                string xx,yy;
+                vector<string>xt = splitString(x,'.');
+                vector<string>yt = splitString(y,'.');
+                if(xt.size()==1){
+                    xx = it1[mp[xt[0]]] != "" ? it1[mp[xt[0]]]:it2[mp[xt[0]]];
+                }
+                else {
+                    if(xt[0]==table[0])xx=it1[mp[xt[1]]];
+                    else xx=it2[mp[xt[1]]];
+                }
+                if(yt.size()==1){
+                    yy = it1[mp[yt[0]]] != "" ? it1[mp[yt[0]]]:it2[mp[yt[0]]];
+                }
+                else {
+                    if(yt[0]==table[0])yy=it1[mp[yt[1]]];
+                    else yy=it2[mp[yt[1]]];
+                }
+               if(stoll(xx)>=stoll(yy)){
+                    flag=0;
+                    break;
+                }
+            }
+            }
+            if(flag){
+            if(attribute[0]=="*"){
+                for(int i=0;i<7;i++){
+                    if(it1[i]!=""){
+                        cout<<it1[i];
+                        cout<<" ";
+                    }
+                }
+                for(int i=0;i<7;i++){
+                    if(it2[i]!=""){
+                        cout<<it2[i];
+                        cout<<" ";
+                    }
+                }
+                cout<<endl;
+            }
+            else {
+                for(int i=0;i<attribute.size();i++){
+                    string a=attribute[i];
+                    vector<string>t=splitString(a,'.');
+                    if(t.size()==1){
+                        string x = it1[mp[t[0]]]=="" ? it2[mp[t[0]]] : it1[mp[t[0]]];
+                        cout<<x<<" ";
+                    }
+                    else {
+                        string x = t[0] == table[0] ? it1[mp[t[1]]] : it2[mp[t[1]]];
+                        cout<<x<<" ";
+                    }
+                }
+                cout<<endl;
+            }
+        }
         }
     }
    }
