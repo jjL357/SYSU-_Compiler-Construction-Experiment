@@ -78,6 +78,7 @@ void process_data(){
         }
     }
 }
+
 // 移除字符串中的所有空格
 std::string removeSpaces(const std::string& str) {
     std::string result;
@@ -123,80 +124,90 @@ std::vector<std::string> splitString_str(const std::string& str, const std::stri
 
     return result;
 }
+vector<string>xy1(string w,string str){
+    vector<string>t;
+    t = splitString_str(w,str);
+    string x=t[0],y=t[1];
+    vector<string>xt = splitString(x,'.');
+    vector<string>yt = splitString(y,'.');
+    string xx = xt.size()==1 ? xt[0]:xt[1];
+    string yy = yt.size()==1 ? yt[0]:yt[1];
+    if(xx[0]=='\"'&&xx.back()=='\"'){
+        xx = xx.substr(1,xx.size()-2);
+    }
+    if(yy[0]=='\"'&&yy.back()=='\"'){
+        yy = yy.substr(1,yy.size()-2);
+    }
+    return {xx,yy};
+}
+
+vector<string>xy2(string w,string str){
+    vector<string>t;
+    t = splitString_str(w,str);
+    string x=t[0],y=t[1];
+    vector<string>xt = splitString(x,'.');
+    vector<string>yt = splitString(y,'.');
+    string xx = xt.size()==1 ? xt[0]:xt[1];
+    string yy = yt.size()==1 ? yt[0]:yt[1];
+    if(xx[0]=='\"'&&xx.back()=='\"'){
+        xx = xx.substr(1,xx.size()-2);
+    }
+    if(yy[0]=='\"'&&yy.back()=='\"'){
+        yy = yy.substr(1,yy.size()-2);
+    }
+    return {xx,yy};
+}
 // "sid","cid","age","score","name","dept","tid"
 void get_data(const std::vector<std::string>&table,const std::vector<std::string>&attribute,const std::vector<std::string>&where){
    if(table.size()==1){
     for(auto&it:TABLE[table[0]]){
         int flag=1;
         for(auto&w:where){
-            vector<string>t;
+            
             if(w.find("!=")!=-1){
-                t = splitString_str(w,"!=");
-                string x=t[0],y=t[1];
-                vector<string>xt = splitString(x,'.');
-                vector<string>yt = splitString(y,'.');
-                string xx = xt.size()==1 ? xt[0]:xt[1];
-                string yy = yt.size()==1 ? yt[0]:yt[1];
+                vector<string> t = xy1(w,"!=");
+                string xx = t[0],yy=t[1];
+
                 if(xx==yy){
                     flag=0;
                     break;
                 }
             }
             else if(w.find(">=")!=-1){
-                 t = splitString_str(w,">=");
-                string x=t[0],y=t[1];
-                vector<string>xt = splitString(x,'.');
-                vector<string>yt = splitString(y,'.');
-                string xx = xt.size()==1 ? xt[0]:xt[1];
-                string yy = yt.size()==1 ? yt[0]:yt[1];
+                vector<string> t = xy1(w,">=");
+                string xx = t[0],yy=t[1];
                 if(stoll(xx)<stoll(yy)){
                     flag=0;
                     break;
                 }
             }
             else if(w.find("<=")!=-1){
-                 t = splitString_str(w,"<=");
-                string x=t[0],y=t[1];
-                vector<string>xt = splitString(x,'.');
-                vector<string>yt = splitString(y,'.');
-                string xx = xt.size()==1 ? xt[0]:xt[1];
-                string yy = yt.size()==1 ? yt[0]:yt[1];
+                 vector<string> t = xy1(w,"<=");
+                string xx = t[0],yy=t[1];
                 if(stoll(xx)>stoll(yy)){
                     flag=0;
                     break;
                 }
             }
             else if(w.find("=")!=-1){
-                 t = splitString_str(w,"=");
-                string x=t[0],y=t[1];
-                vector<string>xt = splitString(x,'.');
-                vector<string>yt = splitString(y,'.');
-                string xx = xt.size()==1 ? xt[0]:xt[1];
-                string yy = yt.size()==1 ? yt[0]:yt[1];
+                 vector<string> t = xy1(w,"=");
+                string xx = t[0],yy=t[1];
                 if(xx!=yy){
                     flag=0;
                     break;
                 }
             }
             else if(w.find(">")!=-1){
-                 t = splitString_str(w,">");
-                string x=t[0],y=t[1];
-                vector<string>xt = splitString(x,'.');
-                vector<string>yt = splitString(y,'.');
-                string xx = xt.size()==1 ? xt[0]:xt[1];
-                string yy = yt.size()==1 ? yt[0]:yt[1];
+                 vector<string> t = xy1(w,">");
+                string xx = t[0],yy=t[1];
                 if(stoll(xx)<=stoll(yy)){
                     flag=0;
                     break;
                 }
             }
             else if(w.find("<")!=-1){
-                 t = splitString_str(w,"<");
-                string x=t[0],y=t[1];
-                vector<string>xt = splitString(x,'.');
-                vector<string>yt = splitString(y,'.');
-                string xx = xt.size()==1 ? xt[0]:xt[1];
-                string yy = yt.size()==1 ? yt[0]:yt[1];
+                 vector<string> t = xy1(w,"<");
+                string xx = t[0],yy=t[1];
                if(stoll(xx)>=stoll(yy)){
                     flag=0;
                     break;
@@ -233,22 +244,32 @@ void get_data(const std::vector<std::string>&table,const std::vector<std::string
         for(auto&it2:TABLE[table[1]]){
             int flag = 1;
             for(auto&w:where){
-                 vector<string>t;
+               
+                vector<string>t;
             if(w.find("!=")!=-1){
-                t = splitString_str(w,"=");
+                t = splitString_str(w,"!=");
                 string x=t[0],y=t[1];
                 string xx,yy;
                 vector<string>xt = splitString(x,'.');
                 vector<string>yt = splitString(y,'.');
                 if(xt.size()==1){
-                    xx = it1[mp[xt[0]]] != "" ? it1[mp[xt[0]]]:it2[mp[xt[0]]];
+                    if(!mp.count(xt[0])){
+                        xx = xt[0];
+                        if(xx[0]=='\"'&&xx.back()=='\"')xx = xx.substr(1,xx.size()-2);
+                    }
+                    else xx = it1[mp[xt[0]]] != "" ? it1[mp[xt[0]]]:it2[mp[xt[0]]];
                 }
                 else {
                     if(xt[0]==table[0])xx=it1[mp[xt[1]]];
                     else xx=it2[mp[xt[1]]];
                 }
                 if(yt.size()==1){
-                    yy = it1[mp[yt[0]]] != "" ? it1[mp[yt[0]]]:it2[mp[yt[0]]];
+                    if(!mp.count(yt[0])){
+                        yy = yt[0];
+                        if(yy[0]=='\"'&&yy.back()=='\"')
+                        yy = yy.substr(1,yy.size()-2);
+                    }
+                    else yy = it1[mp[yt[0]]] != "" ? it1[mp[yt[0]]]:it2[mp[yt[0]]];
                 }
                 else {
                     if(yt[0]==table[0])yy=it1[mp[yt[1]]];
@@ -260,20 +281,29 @@ void get_data(const std::vector<std::string>&table,const std::vector<std::string
                 }
             }
             else if(w.find(">=")!=-1){
-                 t = splitString_str(w,"=");
+                 t = splitString_str(w,">=");
                 string x=t[0],y=t[1];
                 string xx,yy;
                 vector<string>xt = splitString(x,'.');
                 vector<string>yt = splitString(y,'.');
                 if(xt.size()==1){
-                    xx = it1[mp[xt[0]]] != "" ? it1[mp[xt[0]]]:it2[mp[xt[0]]];
+                    if(!mp.count(xt[0])){
+                        xx = xt[0];
+                        if(xx[0]=='\"'&&xx.back()=='\"')xx = xx.substr(1,xx.size()-2);
+                    }
+                    else xx = it1[mp[xt[0]]] != "" ? it1[mp[xt[0]]]:it2[mp[xt[0]]];
                 }
                 else {
                     if(xt[0]==table[0])xx=it1[mp[xt[1]]];
                     else xx=it2[mp[xt[1]]];
                 }
                 if(yt.size()==1){
-                    yy = it1[mp[yt[0]]] != "" ? it1[mp[yt[0]]]:it2[mp[yt[0]]];
+                    if(!mp.count(yt[0])){
+                        yy = yt[0];
+                        if(yy[0]=='\"'&&yy.back()=='\"')
+                        yy = yy.substr(1,yy.size()-2);
+                    }
+                    else yy = it1[mp[yt[0]]] != "" ? it1[mp[yt[0]]]:it2[mp[yt[0]]];
                 }
                 else {
                     if(yt[0]==table[0])yy=it1[mp[yt[1]]];
@@ -285,20 +315,29 @@ void get_data(const std::vector<std::string>&table,const std::vector<std::string
                 }
             }
             else if(w.find("<=")!=-1){
-                t = splitString_str(w,"=");
+                t = splitString_str(w,"<=");
                 string x=t[0],y=t[1];
                 string xx,yy;
                 vector<string>xt = splitString(x,'.');
                 vector<string>yt = splitString(y,'.');
                 if(xt.size()==1){
-                    xx = it1[mp[xt[0]]] != "" ? it1[mp[xt[0]]]:it2[mp[xt[0]]];
+                    if(!mp.count(xt[0])){
+                        xx = xt[0];
+                        if(xx[0]=='\"'&&xx.back()=='\"')xx = xx.substr(1,xx.size()-2);
+                    }
+                    else xx = it1[mp[xt[0]]] != "" ? it1[mp[xt[0]]]:it2[mp[xt[0]]];
                 }
                 else {
                     if(xt[0]==table[0])xx=it1[mp[xt[1]]];
                     else xx=it2[mp[xt[1]]];
                 }
                 if(yt.size()==1){
-                    yy = it1[mp[yt[0]]] != "" ? it1[mp[yt[0]]]:it2[mp[yt[0]]];
+                    if(!mp.count(yt[0])){
+                        yy = yt[0];
+                        if(yy[0]=='\"'&&yy.back()=='\"')
+                        yy = yy.substr(1,yy.size()-2);
+                    }
+                    else yy = it1[mp[yt[0]]] != "" ? it1[mp[yt[0]]]:it2[mp[yt[0]]];
                 }
                 else {
                     if(yt[0]==table[0])yy=it1[mp[yt[1]]];
@@ -315,15 +354,25 @@ void get_data(const std::vector<std::string>&table,const std::vector<std::string
                 string xx,yy;
                 vector<string>xt = splitString(x,'.');
                 vector<string>yt = splitString(y,'.');
-                if(xt.size()==1){
-                    xx = it1[mp[xt[0]]] != "" ? it1[mp[xt[0]]]:it2[mp[xt[0]]];
+               if(xt.size()==1){
+                    if(!mp.count(xt[0])){
+                        xx = xt[0];
+                        if(xx[0]=='\"'&&xx.back()=='\"')xx = xx.substr(1,xx.size()-2);
+                    }
+                    else xx = it1[mp[xt[0]]] != "" ? it1[mp[xt[0]]]:it2[mp[xt[0]]];
                 }
                 else {
                     if(xt[0]==table[0])xx=it1[mp[xt[1]]];
                     else xx=it2[mp[xt[1]]];
                 }
                 if(yt.size()==1){
-                    yy = it1[mp[yt[0]]] != "" ? it1[mp[yt[0]]]:it2[mp[yt[0]]];
+                    if(!mp.count(yt[0])){
+                        yy = yt[0];
+                        
+                        if(yy[0]=='\"'&&yy.back()=='\"')yy = yy.substr(1,yy.size()-2);
+                        
+                    }
+                    else yy = it1[mp[yt[0]]] != "" ? it1[mp[yt[0]]]:it2[mp[yt[0]]];
                 }
                 else {
                     if(yt[0]==table[0])yy=it1[mp[yt[1]]];
@@ -335,20 +384,29 @@ void get_data(const std::vector<std::string>&table,const std::vector<std::string
                 }
             }
             else if(w.find(">")!=-1){
-                t = splitString_str(w,"=");
+                t = splitString_str(w,">");
                 string x=t[0],y=t[1];
                 string xx,yy;
                 vector<string>xt = splitString(x,'.');
                 vector<string>yt = splitString(y,'.');
                 if(xt.size()==1){
-                    xx = it1[mp[xt[0]]] != "" ? it1[mp[xt[0]]]:it2[mp[xt[0]]];
+                    if(!mp.count(xt[0])){
+                        xx = xt[0];
+                        if(xx[0]=='\"'&&xx.back()=='\"')xx = xx.substr(1,xx.size()-2);
+                    }
+                    else xx = it1[mp[xt[0]]] != "" ? it1[mp[xt[0]]]:it2[mp[xt[0]]];
                 }
                 else {
                     if(xt[0]==table[0])xx=it1[mp[xt[1]]];
                     else xx=it2[mp[xt[1]]];
                 }
                 if(yt.size()==1){
-                    yy = it1[mp[yt[0]]] != "" ? it1[mp[yt[0]]]:it2[mp[yt[0]]];
+                    if(!mp.count(yt[0])){
+                        yy = yt[0];
+                        if(yy[0]=='\"'&&yy.back()=='\"')
+                        yy = yy.substr(1,yy.size()-2);
+                    }
+                    else yy = it1[mp[yt[0]]] != "" ? it1[mp[yt[0]]]:it2[mp[yt[0]]];
                 }
                 else {
                     if(yt[0]==table[0])yy=it1[mp[yt[1]]];
@@ -360,25 +418,38 @@ void get_data(const std::vector<std::string>&table,const std::vector<std::string
                 }
             }
             else if(w.find("<")!=-1){
-                 t = splitString_str(w,"=");
+                 t = splitString_str(w,"<");
                 string x=t[0],y=t[1];
                 string xx,yy;
                 vector<string>xt = splitString(x,'.');
                 vector<string>yt = splitString(y,'.');
+
                 if(xt.size()==1){
-                    xx = it1[mp[xt[0]]] != "" ? it1[mp[xt[0]]]:it2[mp[xt[0]]];
+                    if(!mp.count(xt[0])){
+                        xx = xt[0];
+                        if(xx[0]=='\"'&&xx.back()=='\"')xx = xx.substr(1,xx.size()-2);
+                    }
+                    else xx = it1[mp[xt[0]]] != "" ? it1[mp[xt[0]]]:it2[mp[xt[0]]];
                 }
                 else {
                     if(xt[0]==table[0])xx=it1[mp[xt[1]]];
                     else xx=it2[mp[xt[1]]];
                 }
+        
                 if(yt.size()==1){
-                    yy = it1[mp[yt[0]]] != "" ? it1[mp[yt[0]]]:it2[mp[yt[0]]];
+
+                    if(!mp.count(yt[0])){
+                        yy = yt[0];
+                        if(yy[0]=='\"'&&yy.back()=='\"')
+                        yy = yy.substr(1,yy.size()-2);
+                    }
+                    else yy = it1[mp[yt[0]]] != "" ? it1[mp[yt[0]]]:it2[mp[yt[0]]];
                 }
                 else {
                     if(yt[0]==table[0])yy=it1[mp[yt[1]]];
                     else yy=it2[mp[yt[1]]];
                 }
+                
                if(stoll(xx)>=stoll(yy)){
                     flag=0;
                     break;
