@@ -1,6 +1,8 @@
 {
     "files.associations": {
         "*.pl": "prolog",
-        "vector": "cpp"
-    }
+        "vector": "cpp",
+        "xstring": "cpp"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }

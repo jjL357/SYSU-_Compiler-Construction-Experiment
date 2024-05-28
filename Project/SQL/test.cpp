@@ -26,7 +26,7 @@ unordered_map<string, int> col_to_index = {
 };
 
 // 处理输入记录，存储到TABLE对应的表中
-void process_data() {
+void process_input() {
     for (int i = 0; i < 5; i++) {
         int n;
         cin >> n;
@@ -123,7 +123,7 @@ vector<string> splitString_str(const string& str, const string& delimiters) {
 
 // 对查询一张表的条件的左右值进行处理
 // w : 条件字符串 str: 判别符
-vector<string> process_condition(string w, string str) {
+vector<string> process_condition_for_one_table(string w, string str) {
     vector<string> t;
     t = splitString_str(w, str);
     string x = t[0], y = t[1];
@@ -142,48 +142,79 @@ vector<string> process_condition(string w, string str) {
     return {xx, yy};
 }
 
+// 对查询2张表的条件的左右值进行处理
+// t:左右值 table:表名集合 it1: table1的记录 it2: table2的记录 
+vector<string> process_condition_for_two_table(const vector<string>& t,const vector<string>& table,const vector<string>& it1,const vector<string>& it2) {
+    string x = t[0], y = t[1];
+    string xx, yy;
+    vector<string> xt = splitString(x, '.');
+    vector<string> yt = splitString(y, '.');
+    if (xt.size() == 1) {
+        if (!col_to_index.count(xt[0])) { 
+            xx = xt[0];
+            if (xx[0] == '\"' && xx.back() == '\"') xx = xx.substr(1, xx.size() - 2);
+        } else xx = it1[col_to_index[xt[0]]] != "" ? it1[col_to_index[xt[0]]] : it2[col_to_index[xt[0]]];
+    } else {
+        if (xt[0] == table[0]) xx = it1[col_to_index[xt[1]]];
+        else xx = it2[col_to_index[xt[1]]];
+    }
+    if (yt.size() == 1) {
+        if (!col_to_index.count(yt[0])) {
+            yy = yt[0];
+            if (yy[0] == '\"' && yy.back() == '\"') yy = yy.substr(1, yy.size() - 2);
+        } else yy = it1[col_to_index[yt[0]]] != "" ? it1[col_to_index[yt[0]]] : it2[col_to_index[yt[0]]];
+    } else {
+        if (yt[0] == table[0]) yy = it1[col_to_index[yt[1]]];
+        else yy = it2[col_to_index[yt[1]]];
+    }
+    return {xx,yy};
+}
+
 // 处理对1张表的查询
 void process_queries_for_one_table(const vector<string>& table, const vector<string>& attribute, const vector<string>& where) {
     for (auto& it : TABLE[table[0]]) {
             int flag = 1; // 条件是否成立标志
+
+            // 判断where之后的条件是否成立
             for (auto& w : where) {
-                if (w.find("!=") != -1) {
-                    vector<string> t = process_condition(w, "!=");
+                // 针对不同判别符处理
+                if (w.find("!=") != -1) { // != 
+                    vector<string> t = process_condition_for_one_table(w, "!=");
                     string xx = t[0], yy = t[1];
                     if (xx == yy) {
                         flag = 0;
                         break;
                     }
-                } else if (w.find(">=") != -1) {
-                    vector<string> t = process_condition(w, ">=");
+                } else if (w.find(">=") != -1) { // >=
+                    vector<string> t = process_condition_for_one_table(w, ">=");
                     string xx = t[0], yy = t[1];
                     if (stoll(xx) < stoll(yy)) {
                         flag = 0;
                         break;
                     }
-                } else if (w.find("<=") != -1) {
-                    vector<string> t = process_condition(w, "<=");
+                } else if (w.find("<=") != -1) { // <=
+                    vector<string> t = process_condition_for_one_table(w, "<=");
                     string xx = t[0], yy = t[1];
                     if (stoll(xx) > stoll(yy)) {
                         flag = 0;
                         break;
                     }
-                } else if (w.find("=") != -1) {
-                    vector<string> t = process_condition(w, "=");
+                } else if (w.find("=") != -1) {// =
+                    vector<string> t = process_condition_for_one_table(w, "=");
                     string xx = t[0], yy = t[1];
                     if (xx != yy) {
                         flag = 0;
                         break;
                     }
-                } else if (w.find(">") != -1) {
-                    vector<string> t = process_condition(w, ">");
+                } else if (w.find(">") != -1) {// >
+                    vector<string> t = process_condition_for_one_table(w, ">");
                     string xx = t[0], yy = t[1];
                     if (stoll(xx) <= stoll(yy)) {
                         flag = 0;
                         break;
                     }
-                } else if (w.find("<") != -1) {
-                    vector<string> t = process_condition(w, "<");
+                } else if (w.find("<") != -1) { // <
+                    vector<string> t = process_condition_for_one_table(w, "<");
                     string xx = t[0], yy = t[1];
                     if (stoll(xx) >= stoll(yy)) {
                         flag = 0;
@@ -191,16 +222,19 @@ void process_queries_for_one_table(const vector<string>& table, const vector<str
                     }
                 }
             }
+
+            // 如果条件成立,输出查询结果
             if (flag) {
-                if (attribute[0] == "*") {
+                if (attribute[0] == "*") { // 输出查询表的所有列
                     for (int i = 0; i < 7; i++) {
                         if (it[i] != "") {
                             cout << it[i] << " ";
                         }
                     }
                     cout << endl;
-                } else {
+                } else { // 输出查询的列
                     for (int i = 0; i < attribute.size(); i++) {
+                        // 由于是对一张表的查询,可以只关注.之后的列名
                         string a = attribute[i];
                         vector<string> t = splitString(a, '.');
                         string s;
@@ -219,181 +253,66 @@ void process_queries_for_one_table(const vector<string>& table, const vector<str
 void process_queries_for_two_table(const vector<string>& table, const vector<string>& attribute, const vector<string>& where) {
     for (auto& it1 : TABLE[table[0]]) {
         for (auto& it2 : TABLE[table[1]]) {
-            int flag = 1;
+            int flag = 1; // 判断where之后的条件是否成立的标志
+
+            // 判断where之后的条件是否成立
             for (auto& w : where) {
                 vector<string> t;
-                if (w.find("!=") != -1) {
+                // 针对不同的判别符进行处理
+                if (w.find("!=") != -1) { // != 
                     t = splitString_str(w, "!=");
-                    string x = t[0], y = t[1];
-                    string xx, yy;
-                    vector<string> xt = splitString(x, '.');
-                    vector<string> yt = splitString(y, '.');
-                    if (xt.size() == 1) {
-                        if (!col_to_index.count(xt[0])) {
-                            xx = xt[0];
-                            if (xx[0] == '\"' && xx.back() == '\"') xx = xx.substr(1, xx.size() - 2);
-                        } else xx = it1[col_to_index[xt[0]]] != "" ? it1[col_to_index[xt[0]]] : it2[col_to_index[xt[0]]];
-                    } else {
-                        if (xt[0] == table[0]) xx = it1[col_to_index[xt[1]]];
-                        else xx = it2[col_to_index[xt[1]]];
-                    }
-                    if (yt.size() == 1) {
-                        if (!col_to_index.count(yt[0])) {
-                            yy = yt[0];
-                            if (yy[0] == '\"' && yy.back() == '\"') yy = yy.substr(1, yy.size() - 2);
-                        } else yy = it1[col_to_index[yt[0]]] != "" ? it1[col_to_index[yt[0]]] : it2[col_to_index[yt[0]]];
-                    } else {
-                        if (yt[0] == table[0]) yy = it1[col_to_index[yt[1]]];
-                        else yy = it2[col_to_index[yt[1]]];
-                    }
+                    vector<string> temp = process_condition_for_two_table(t,table,it1,it2);
+                    string xx = temp[0],yy = temp[1];
                     if (xx == yy) {
                         flag = 0;
                         break;
                     }
-                } else if (w.find(">=") != -1) {
+                } else if (w.find(">=") != -1) { // >= 
                     t = splitString_str(w, ">=");
-                    string x = t[0], y = t[1];
-                    string xx, yy;
-                    vector<string> xt = splitString(x, '.');
-                    vector<string> yt = splitString(y, '.');
-                    if (xt.size() == 1) {
-                        if (!col_to_index.count(xt[0])) {
-                            xx = xt[0];
-                            if (xx[0] == '\"' && xx.back() == '\"') xx = xx.substr(1, xx.size() - 2);
-                        } else xx = it1[col_to_index[xt[0]]] != "" ? it1[col_to_index[xt[0]]] : it2[col_to_index[xt[0]]];
-                    } else {
-                        if (xt[0] == table[0]) xx = it1[col_to_index[xt[1]]];
-                        else xx = it2[col_to_index[xt[1]]];
-                    }
-                    if (yt.size() == 1) {
-                        if (!col_to_index.count(yt[0])) {
-                            yy = yt[0];
-                            if (yy[0] == '\"' && yy.back() == '\"') yy = yy.substr(1, yy.size() - 2);
-                        } else yy = it1[col_to_index[yt[0]]] != "" ? it1[col_to_index[yt[0]]] : it2[col_to_index[yt[0]]];
-                    } else {
-                        if (yt[0] == table[0]) yy = it1[col_to_index[yt[1]]];
-                        else yy = it2[col_to_index[yt[1]]];
-                    }
+                    vector<string> temp = process_condition_for_two_table(t,table,it1,it2);
+                    string xx = temp[0],yy = temp[1];
                     if (stoll(xx) < stoll(yy)) {
                         flag = 0;
                         break;
                     }
-                } else if (w.find("<=") != -1) {
+                } else if (w.find("<=") != -1) { // <= 
                     t = splitString_str(w, "<=");
-                    string x = t[0], y = t[1];
-                    string xx, yy;
-                    vector<string> xt = splitString(x, '.');
-                    vector<string> yt = splitString(y, '.');
-                    if (xt.size() == 1) {
-                        if (!col_to_index.count(xt[0])) {
-                            xx = xt[0];
-                            if (xx[0] == '\"' && xx.back() == '\"') xx = xx.substr(1, xx.size() - 2);
-                        } else xx = it1[col_to_index[xt[0]]] != "" ? it1[col_to_index[xt[0]]] : it2[col_to_index[xt[0]]];
-                    } else {
-                        if (xt[0] == table[0]) xx = it1[col_to_index[xt[1]]];
-                        else xx = it2[col_to_index[xt[1]]];
-                    }
-                    if (yt.size() == 1) {
-                        if (!col_to_index.count(yt[0])) {
-                            yy = yt[0];
-                            if (yy[0] == '\"' && yy.back() == '\"') yy = yy.substr(1, yy.size() - 2);
-                        } else yy = it1[col_to_index[yt[0]]] != "" ? it1[col_to_index[yt[0]]] : it2[col_to_index[yt[0]]];
-                    } else {
-                        if (yt[0] == table[0]) yy = it1[col_to_index[yt[1]]];
-                        else yy = it2[col_to_index[yt[1]]];
-                    }
+                    vector<string> temp = process_condition_for_two_table(t,table,it1,it2);
+                    string xx = temp[0],yy = temp[1];
                     if (stoll(xx) > stoll(yy)) {
                         flag = 0;
                         break;
                     }
-                } else if (w.find("=") != -1) {
+                } else if (w.find("=") != -1) { // = 
                     t = splitString_str(w, "=");
-                    string x = t[0], y = t[1];
-                    string xx, yy;
-                    vector<string> xt = splitString(x, '.');
-                    vector<string> yt = splitString(y, '.');
-                    if (xt.size() == 1) {
-                        if (!col_to_index.count(xt[0])) {
-                            xx = xt[0];
-                            if (xx[0] == '\"' && xx.back() == '\"') xx = xx.substr(1, xx.size() - 2);
-                        } else xx = it1[col_to_index[xt[0]]] != "" ? it1[col_to_index[xt[0]]] : it2[col_to_index[xt[0]]];
-                    } else {
-                        if (xt[0] == table[0]) xx = it1[col_to_index[xt[1]]];
-                        else xx = it2[col_to_index[xt[1]]];
-                    }
-                    if (yt.size() == 1) {
-                        if (!col_to_index.count(yt[0])) {
-                            yy = yt[0];
-                            if (yy[0] == '\"' && yy.back() == '\"') yy = yy.substr(1, yy.size() - 2);
-                        } else yy = it1[col_to_index[yt[0]]] != "" ? it1[col_to_index[yt[0]]] : it2[col_to_index[yt[0]]];
-                    } else {
-                        if (yt[0] == table[0]) yy = it1[col_to_index[yt[1]]];
-                        else yy = it2[col_to_index[yt[1]]];
-                    }
+                    vector<string> temp = process_condition_for_two_table(t,table,it1,it2);
+                    string xx = temp[0],yy = temp[1];
                     if (xx != yy) {
                         flag = 0;
                         break;
                     }
-                } else if (w.find(">") != -1) {
+                } else if (w.find(">") != -1) { // > 
                     t = splitString_str(w, ">");
-                    string x = t[0], y = t[1];
-                    string xx, yy;
-                    vector<string> xt = splitString(x, '.');
-                    vector<string> yt = splitString(y, '.');
-                    if (xt.size() == 1) {
-                        if (!col_to_index.count(xt[0])) {
-                            xx = xt[0];
-                            if (xx[0] == '\"' && xx.back() == '\"') xx = xx.substr(1, xx.size() - 2);
-                        } else xx = it1[col_to_index[xt[0]]] != "" ? it1[col_to_index[xt[0]]] : it2[col_to_index[xt[0]]];
-                    } else {
-                        if (xt[0] == table[0]) xx = it1[col_to_index[xt[1]]];
-                        else xx = it2[col_to_index[xt[1]]];
-                    }
-                    if (yt.size() == 1) {
-                        if (!col_to_index.count(yt[0])) {
-                            yy = yt[0];
-                            if (yy[0] == '\"' && yy.back() == '\"') yy = yy.substr(1, yy.size() - 2);
-                        } else yy = it1[col_to_index[yt[0]]] != "" ? it1[col_to_index[yt[0]]] : it2[col_to_index[yt[0]]];
-                    } else {
-                        if (yt[0] == table[0]) yy = it1[col_to_index[yt[1]]];
-                        else yy = it2[col_to_index[yt[1]]];
-                    }
+                    vector<string> temp = process_condition_for_two_table(t,table,it1,it2);
+                    string xx = temp[0],yy = temp[1];
                     if (stoll(xx) <= stoll(yy)) {
                         flag = 0;
                         break;
                     }
-                } else if (w.find("<") != -1) {
+                } else if (w.find("<") != -1) {// < 
                     t = splitString_str(w, "<");
-                    string x = t[0], y = t[1];
-                    string xx, yy;
-                    vector<string> xt = splitString(x, '.');
-                    vector<string> yt = splitString(y, '.');
-                    if (xt.size() == 1) {
-                        if (!col_to_index.count(xt[0])) {
-                            xx = xt[0];
-                            if (xx[0] == '\"' && xx.back() == '\"') xx = xx.substr(1, xx.size() - 2);
-                        } else xx = it1[col_to_index[xt[0]]] != "" ? it1[col_to_index[xt[0]]] : it2[col_to_index[xt[0]]];
-                    } else {
-                        if (xt[0] == table[0]) xx = it1[col_to_index[xt[1]]];
-                        else xx = it2[col_to_index[xt[1]]];
-                    }
-                    if (yt.size() == 1) {
-                        if (!col_to_index.count(yt[0])) {
-                            yy = yt[0];
-                            if (yy[0] == '\"' && yy.back() == '\"') yy = yy.substr(1, yy.size() - 2);
-                        } else yy = it1[col_to_index[yt[0]]] != "" ? it1[col_to_index[yt[0]]] : it2[col_to_index[yt[0]]];
-                    } else {
-                        if (yt[0] == table[0]) yy = it1[col_to_index[yt[1]]];
-                        else yy = it2[col_to_index[yt[1]]];
-                    }
+                    vector<string> temp = process_condition_for_two_table(t,table,it1,it2);
+                    string xx = temp[0],yy = temp[1];
                     if (stoll(xx) >= stoll(yy)) {
                         flag = 0;
                         break;
                     }
                 }
             }
+
+            // 如果条件成立,输出查询结果
             if (flag) {
-                if (attribute[0] == "*") {
+                if (attribute[0] == "*") { // 输出查询表中的所有列
                     for (int i = 0; i < 7; i++) {
                         if (it1[i] != "") {
                             cout << it1[i] << " ";
@@ -405,9 +324,10 @@ void process_queries_for_two_table(const vector<string>& table, const vector<str
                         }
                     }
                     cout << endl;
-                } else {
+                } else { // 输出查询表中的查询对应的列
                     for (int i = 0; i < attribute.size(); i++) {
                         string a = attribute[i];
+                        // 判断 TABLE.COLUMN ,输出对应TABLE的COLUMN
                         vector<string> t = splitString(a, '.');
                         if (t.size() == 1) {
                             string x = it1[col_to_index[t[0]]] == "" ? it2[col_to_index[t[0]]] : it1[col_to_index[t[0]]];
@@ -426,7 +346,7 @@ void process_queries_for_two_table(const vector<string>& table, const vector<str
 
 // 处理查询信息
 void process_queries(const vector<string>& table, const vector<string>& attribute, const vector<string>& where) {
-    if (table.size() == 1) { // 只查询一张表
+    if (table.size() == 1) { // 查询一张表
        process_queries_for_one_table(table,attribute,where);
     } 
     else { // 查询两张表
@@ -436,11 +356,12 @@ void process_queries(const vector<string>& table, const vector<string>& attribut
 
 int main() {
     // 处理输入记录
-    process_data();
+    process_input();
 
-    int n;
+
+    int n; // 查询语句的个数
     cin >> n;
-    cin.ignore();
+    cin.ignore(); // 处理输入n后的换行符
 
     // 处理查询
     while (n > 0) {
@@ -459,9 +380,9 @@ int main() {
             table_str = s.substr(t + 5, w - t - 5);
             where_str = (w == s.size() + 1 ? " " : s.substr(w + 6));
 
-            vector<string> table = splitString(table_str, ',');
-            vector<string> attribute = splitString(attribute_str, ',');
-            vector<string> where = splitString_str(where_str, "AND");
+            vector<string> table = splitString(table_str, ','); // 查询的表集合
+            vector<string> attribute = splitString(attribute_str, ','); // 查询的列集合
+            vector<string> where = splitString_str(where_str, "AND"); // 查询的条件集合
 
             // 处理查询并输出结果
             process_queries(table, attribute, where);
