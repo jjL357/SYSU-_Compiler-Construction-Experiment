@@ -43,9 +43,13 @@ std::unordered_map<std::string, std::vector<int>> col_id = {
         {"Teach", {1, 2}}
 };
 
+// 只针对第1张表的条件限制
 vector<vector<string>>conditions_table1;
+// 只针对第2张表的条件限制
 vector<vector<string>>conditions_table2;
+// 针对2张表比较的的条件限制
 vector<pair<int,string>>conditions_table_mutual;
+// 查询语句中查询的列信息 Col[i]代表  查询的第i个列是第Col[i][0] + 1表 的第Col[i][1]+1列
 vector<vector<int>>Col;
 
 // 处理输入记录，存储到TABLE对应的表中
@@ -132,26 +136,6 @@ vector<string> splitClause(const string& str, const string& delimiter) {
     return result;
 }
 
-// 分割字符串的函数，使用整个字符串作为分隔符(string)，同时去除无用的空格
-vector<string>  splitString(const string& str, const string& delimiters) {
-    vector<string> result;
-    size_t pos = 0;
-    size_t delimiterPos;
-    // 只要还有分隔符，就继续分割
-    while ((delimiterPos = str.find(delimiters, pos)) != string::npos) {
-        // 如果分隔符前面有文本，添加到结果中
-        if (delimiterPos != pos) {
-            result.push_back(removeSpaces(str.substr(pos, delimiterPos - pos)));
-        }
-        // 更新位置，跳过分隔符
-        pos = delimiterPos + delimiters.length();
-    } 
-    // 添加剩余的文本
-    if (pos != str.length()) {
-        result.push_back(removeSpaces(str.substr(pos)));
-    }
-    return result;
-}
 
 // 输出字符串集合
 void output_strings(const vector<string>& output){
@@ -160,6 +144,7 @@ void output_strings(const vector<string>& output){
         if(i != output.size())cout<<" "; 
     }
 }
+
 // 对查询一张表的条件的左右值进行处理
 // w : 条件字符串 str: 判别符
 vector<string> process_condition_for_one_table(const vector<string>& col,string w, string str) {
@@ -189,33 +174,6 @@ vector<string> process_condition_for_one_table(const vector<string>& col,string 
     return {xx, yy};
 }
 
-// 对查询2张表的条件的左右值进行处理
-// t:左右值 table:表名集合 it1: table1的记录 it2: table2的记录 
-vector<string> process_condition_for_two_table(const vector<string>& t,const vector<string>& table,const vector<string>& it1,const vector<string>& it2) {
-    string x = t[0], y = t[1];
-    string xx, yy;
-    vector<string> xt =  splitClause(x, ".");
-    vector<string> yt =  splitClause(y, ".");
-    if (xt.size() == 1) {
-        if (!col_to_index.count(xt[0])) { 
-            xx = xt[0];
-            if (xx[0] == '\"' && xx.back() == '\"') xx = xx.substr(1, xx.size() - 2);
-        } else xx = it1[col_to_index[xt[0]]] != "" ? it1[col_to_index[xt[0]]] : it2[col_to_index[xt[0]]];
-    } else {
-        if (xt[0] == table[0]) xx = it1[col_to_index[xt[1]]];
-        else xx = it2[col_to_index[xt[1]]];
-    }
-    if (yt.size() == 1) {
-        if (!col_to_index.count(yt[0])) {
-            yy = yt[0];
-            if (yy[0] == '\"' && yy.back() == '\"') yy = yy.substr(1, yy.size() - 2);
-        } else yy = it1[col_to_index[yt[0]]] != "" ? it1[col_to_index[yt[0]]] : it2[col_to_index[yt[0]]];
-    } else {
-        if (yt[0] == table[0]) yy = it1[col_to_index[yt[1]]];
-        else yy = it2[col_to_index[yt[1]]];
-    }
-    return {xx,yy};
-}
 
 // 处理对1张表的查询
 void process_queries_for_one_table(const vector<string>& table, const vector<string>& attribute, const vector<string>& where) {
@@ -276,81 +234,7 @@ void process_queries_for_one_table(const vector<string>& table, const vector<str
         }
 }
 
-// 处理对两张表的查询
-void process_queries_for_two_table(const vector<string>& table, const vector<string>& attribute, const vector<string>& where) {
-    for (auto& it1 : TABLE[table[0]]) {
-        for (auto& it2 : TABLE[table[1]]) {
-            int flag = 1; // 判断where之后的条件是否成立的标志
-            // 判断where之后的条件是否成立
-            for (auto& w : where) {
-                vector<string> t;
-                // 针对不同的判别符进行处理
-                if (w.find("=") != -1) { // = 
-                    t =  splitClause(w, "=");
-                    vector<string> temp = process_condition_for_two_table(t,table,it1,it2);
-                    string xx = temp[0],yy = temp[1];
-                    if (xx != yy) {
-                        flag = 0;
-                        break;
-                    }
-                } else if (w.find(">") != -1) { // > 
-                    t =  splitClause(w, ">");
-                    vector<string> temp = process_condition_for_two_table(t,table,it1,it2);
-                    string xx = temp[0],yy = temp[1];
-                    if (stoll(xx) <= stoll(yy)) {
-                        flag = 0;
-                        break;
-                    }
-                } else if (w.find("<") != -1) {// < 
-                    t =  splitClause(w, "<");
-                    vector<string> temp = process_condition_for_two_table(t,table,it1,it2);
-                    string xx = temp[0],yy = temp[1];
-                    if (stoll(xx) >= stoll(yy)) {
-                        flag = 0;
-                        break;
-                    }
-                }
-            }
-            
-            // 如果条件成立,输出查询结果
-            if (flag) {
-                vector<string>output;
-                if (attribute[0] == "*") { // 输出查询表中的所有列
-                    for (int i = 0; i < 7; i++) {
-                        if (it1[i] != "") {
-                           output.push_back(it1[i]);
-                        }
-                    }
-                    for (int i = 0; i < 7; i++) {
-                        if (it2[i] != "") {
-                           output.push_back(it2[i]);
-                        }
-                    }
-                    output_strings(output);
-                    cout << endl;
-                } else { // 输出查询表中的查询对应的列
-                    vector<string>output;
-                    for (int i = 0; i < attribute.size(); i++) {
-                        string a = attribute[i];
-                        // 判断 TABLE.COLUMN ,输出对应TABLE的COLUMN
-                        vector<string> t =  splitClause(a, ".");
-                        if (t.size() == 1) {
-                            string x = it1[col_to_index[t[0]]] == "" ?  it2[col_to_index[t[0]]] : it1[col_to_index[t[0]]];
-                            output.push_back(x);
-
-                        } else {
-                            string x = t[0] == table[0] ? it1[col_to_index[t[1]]] : it2[col_to_index[t[1]]];
-                            output.push_back(x);
-                        }
-                    }
-                    output_strings(output);
-                    cout << endl;
-                }
-            }
-        }
-    }
-}
-
+// 判断函数
 int judge(const string&a,const string &b,const string &z ){
     if(z=="="){
         return a==b;
@@ -359,85 +243,16 @@ int judge(const string&a,const string &b,const string &z ){
     else return stoll(a) < stoll(b);
 }
 
-// 处理对两张表的查询
-void process_queries_for_two_table_2(const vector<string>& table, const vector<string>& attribute, const vector<string>& where,const vector<vector<string>>&table1,const vector<vector<string>>table2) {
-    vector<int>index1,index2;
-    // 对表二进行筛选
-     for(int i =0 ;i<table2.size();i++){
-        int flag = 1;
-        for(auto&it:conditions_table2){
-            string a ,b,c;
-            a = it[0],b = it[1],c = it[2];
-            if(!judge(table2[i][col_to_index[a]],b,c)){
-                flag = 0;
-                break;
-            }
-        }
-        if(flag)index2.push_back(i);
-    }
-    // 对表一进行筛选
-    for(int i =0 ;i<table1.size();i++){
-        int flag = 1;
-        for(auto&it:conditions_table1){
-            string a ,b,c;
-            a = it[0],b = it[1],c = it[2];
-            if(!judge(table1[i][col_to_index[a]],b,c)){
-                flag = 0;
-                break;
-            }
-        }
-        if(flag)index1.push_back(i);
-    }
-    // 最后对筛选的结果进行二重循环查找
-    for(auto&i1:index1){
-    vector<string>it1 = table1[i1];
-    for(auto&i2:index2){
-        vector<string>it2 = table2[i2];
-        int flag = 1;            
-        if(conditions_table_mutual.size()>0){
-        int t1,t2;
-        string c1,c2,z;
-        t1 = conditions_table_mutual[0].first,c1 = conditions_table_mutual[0].second;
-        t2 = conditions_table_mutual[1].first,c2 = conditions_table_mutual[1].second;
-        z = conditions_table_mutual[2].second;
-        c1 = t1==0 ? it1[col_to_index[c1]] : it2[col_to_index[c1]];
-        c2 = t2==0 ? it1[col_to_index[c2]] : it2[col_to_index[c2]];
-        if(!judge(c1,c2,z))flag = 0;
-        }
-        if(flag){
-            vector<string>output;
-            if (attribute[0] == "*") { // 输出查询表中的所有列
-                for (auto&i:col_id[table[0]]) {
-                        output.push_back(it1[i]);
-                }
-                for (auto&i:col_id[table[1]]) {
-                        output.push_back(it2[i]);
-                }
-                output_strings(output);
-                cout << endl;
-            } else { // 输出查询表中的查询对应的列
-                vector<string>output;
-                for(auto&it:Col){
-                    int x = it[0],y = it[1];
-                    string temp = x == 0?it1[y]:it2[y];
-                    output.push_back(temp);
-                }
-                output_strings(output);
-                cout << endl;
-            }
-        }
-    }
-}
-}
-
-void process_queries_for_two_table_3(const vector<string>& table, const vector<string>& attribute, const vector<string>& where,const vector<vector<string>>&table1,const vector<vector<string>>table2) {
+// 利用数据库查询优化和数据局部性对2张表查询的处理
+void process_queries_for_two_table(const vector<string>& table, const vector<string>& attribute, const vector<string>& where,const vector<vector<string>>&table1,const vector<vector<string>>table2) {
     string c1,z;
+    //c1两张表中比较的列  z判别符
     if(conditions_table_mutual.size()>0){
     c1 = conditions_table_mutual[0].second;
     z = conditions_table_mutual[2].second;}
-    vector<int>index2;
-    vector<pair<int,string>>t1;
-    vector<pair<int,string>>t2;
+    vector<pair<int,string>>t1; // 筛选后的表1记录的索引和对应的列
+    vector<pair<int,string>>t2; // 筛选后的表2记录的索引和对应的列
+    // 对表1进行筛选
     for(int i =0 ;i<table1.size();i++){
         int flag = 1;
         for(auto&it:conditions_table1){
@@ -452,6 +267,7 @@ void process_queries_for_two_table_3(const vector<string>& table, const vector<s
             t1.push_back(make_pair(i,table1[i][col_to_index[c1]]));
         }
     }
+    // 对表2进行筛选
      for(int i =0 ;i<table2.size();i++){
         int flag = 1;
         for(auto&it:conditions_table2){
@@ -466,7 +282,9 @@ void process_queries_for_two_table_3(const vector<string>& table, const vector<s
             t2.push_back(make_pair(i,table2[i][col_to_index[c1]]));
         }
     }
-    vector<pair<int,int>>tt;
+
+    // 利用数据局部性优化(直接用表记录的两重循环,大量数据换出换入缓存导致miss带来的延迟太大,故用较小数据结构来实现)
+    vector<pair<int,int>>tt;  // 条件匹配的两个记录在两张表中的索引
     for(auto&i1:t1){
         int i = i1.first;
         string x = i1.second; 
@@ -476,6 +294,8 @@ void process_queries_for_two_table_3(const vector<string>& table, const vector<s
              if(!conditions_table_mutual.size()||judge(x,y,z))tt.push_back(make_pair(i,j));
         }
     }    
+
+    // 输出查询结果
     for(auto&x:tt){
         int i = x.first,j = x.second;
         if (attribute[0] == "*") { // 输出查询表中的所有列
@@ -502,177 +322,308 @@ void process_queries_for_two_table_3(const vector<string>& table, const vector<s
     
 }
 
-
 // 处理查询信息
 void process_queries(const vector<string>& table, const vector<string>& attribute, const vector<string>& where) {
     if (table.size() == 1) { // 查询一张表
        process_queries_for_one_table(table,attribute,where);
     } 
     else { // 查询两张表
-        //process_queries_for_two_table_(table,attribute,where);
-       //process_queries_for_two_table_2(table,attribute,where,TABLE[table[0]],TABLE[table[1]]);
-       process_queries_for_two_table_3(table,attribute,where,TABLE[table[0]],TABLE[table[1]]);
+        process_queries_for_two_table(table,attribute,where,TABLE[table[0]],TABLE[table[1]]);
     }
+}
+
+// 对针对两张表的查询的条件与查询的列预处理
+void preprocess_queries_for_two_table(const vector<string>& table, const vector<string>& attribute, const vector<string>& where){
+    // 对针对两张表的查询的条件预处理
+    for(auto&w:where){
+        // 分割出条件中的左值x 右值y 和 分割符z 
+        vector<string>t;
+        string x,y,z;
+        if (w.find("=") != -1) { // = 
+            t =  splitClause(w, "=");
+            z = "=";
+        } else if (w.find(">") != -1) { // > 
+            t =  splitClause(w, ">");
+            z = ">";
+        } else if (w.find("<") != -1) {// < 
+            t =  splitClause(w, "<");
+            z = "<";
+        }
+        x = t[0],y = t[1];
+
+        // 对右值为字符串的情况处理
+        if((y[0] == '\"'&&y.back()=='\"' )){
+            y = y.substr(1,y.size()-2);
+            vector<string>temp = splitClause(x,".");
+            if(temp.size()==1){
+                if(col_exist[table[0]][col_to_index[temp[0]]]){
+                    conditions_table1.push_back({x,y,z});
+                }
+                else {
+                    conditions_table2.push_back({x,y,z});
+                }
+            }
+            else {
+                if(table[0]==temp[0]){
+                    conditions_table1.push_back({temp[1],y,z});
+                }
+                else {
+                    conditions_table2.push_back({temp[1],y,z});
+                }
+            }
+        }
+        // 对右值是数字的情况处理
+        else if(!col_to_index.count(y)&&y.find(".")==-1){
+            vector<string>temp = splitClause(x,".");
+            if(temp.size()==1){
+                if(col_exist[table[0]][col_to_index[temp[0]]]){
+                    conditions_table1.push_back({x,y,z});
+                }
+                else {
+                    conditions_table2.push_back({x,y,z});
+                }
+            }
+            else {
+                if(table[0]==temp[0]){
+                    conditions_table1.push_back({temp[1],y,z});
+                }
+                else {
+                    conditions_table2.push_back({temp[1],y,z});
+                }
+            }
+        }
+        // 对左右值都是表的列处理
+        else{
+            int t1,t2;
+            string c1,c2;
+            // 处理左值
+            vector<string>temp = splitClause(x,".");
+            if(temp.size()==1){
+                if(col_exist[table[0]][col_to_index[temp[0]]]){
+                    t1 = 0;
+                    c1 = x;
+                }
+                else {
+                    t1 = 1;
+                    c1 = x;
+                }
+            }
+            else {
+                if(table[0]==temp[0]){
+                    t1 = 0;
+                    c1 = temp[1];
+                }
+                else {
+                    t1 = 1;
+                    c1 = temp[1];
+                }
+            }
+
+            // 处理右值
+            temp = splitClause(y,".");            
+            if(temp.size()==1){
+                if(col_exist[table[0]][col_to_index[temp[0]]]){
+                    t2 = 0;
+                    c2 = y;
+                }
+                else {
+                    t2 = 1;
+                    c2 = y;
+                }
+            }
+            else {
+                if(table[0]==temp[0]){
+                    t2 = 0;
+                    c2 = temp[1];
+                }
+                else {
+                    t2 = 1;
+                    c2 = temp[1];
+                }
+            }
+        conditions_table_mutual.push_back(make_pair(t1,c1));
+        conditions_table_mutual.push_back(make_pair(t2,c2));
+        conditions_table_mutual.push_back(make_pair(0,z));
+        } 
+    }
+
+    // 对查询的列预处理
+    if(attribute[0]!="*"){
+        for (int i = 0; i < attribute.size(); i++) {
+                string a = attribute[i];
+                vector<string> t =  splitClause(a, ".");
+                int x,y;
+                if (t.size() == 1) {
+                    y = col_to_index[t[0]];
+                    x = col_exist[table[0]][y]?0:1;
+                } else {
+                    y = col_to_index[t[1]];
+                    x = t[0] == table[0]? 0:1; 
+                }
+                Col.push_back({x,y});
+            }
+    }
+}
+
+void process_select(string s){
+    // 对查询语句的不同部分进行分割
+    string attribute_str;
+    string table_str;
+    string where_str;
+
+    int a = s.find("SELECT");// attribute_str是SELECT到FROM之间的子字符串,即查询的列；
+    int t = s.find("FROM");// table_str是FROM到WHERE之间的子字符串,即查询的表;
+    int w = s.find("WHERE") == -1 ? s.size() + 1 : s.find("WHERE");//  where_str是WHERE之后的子字符串(若无WHERE,则该where\_str为"")，即查询的条件
+    attribute_str = s.substr(a + 7, t - a - 8);
+    table_str = s.substr(t + 5, w - t - 5);
+    where_str = (w == s.size() + 1 ? "" : s.substr(w + 6));
+
+    // 分割成集合
+    vector<string> table =  splitClause(table_str, ","); // 查询的表集合
+    vector<string> attribute =  splitClause(attribute_str, ","); // 查询的列集合
+    vector<string> where = splitClause(where_str, "AND"); // 查询的条件集合
+
+    // 将上一轮查询的数据清除
+    conditions_table1.clear();
+    conditions_table2.clear();
+    conditions_table_mutual.clear();
+    Col.clear();
+
+    // 对针对两张表的查询的条件与查询的列预处理
+    if(table.size()==2){
+        preprocess_queries_for_two_table(table,attribute,where);
+    }
+
+    // 处理查询并输出查询结果
+    process_queries(table, attribute, where);
+}
+
+// 解析 INSERT 语句
+void process_insert(const std::string& s) {
+    std::string table_name;
+    std::string col_names;
+    std::string values_names;
+    size_t values_pos = s.find("VALUES");
+    size_t col_pos = s.find("(");
+
+    // 分割出表名 列名 和 值
+    table_name = s.substr(12, col_pos - 12);
+    col_names = s.substr(col_pos,values_pos-col_pos);
+    values_names = s.substr(values_pos + 7); 
+    // 去除空格
+    table_name = removeSpaces(table_name);
+    col_names = removeSpaces(col_names);
+    values_names = removeSpaces(values_names);
+    // 去除括号
+    col_names = col_names.substr(1,col_names.size()-2);
+    values_names = values_names.substr(1,values_names.size()-2);
+
+    vector<string>cols = splitClause(col_names,",");
+    vector<string>values = splitClause(values_names,",");
+
+    // 插入数据
+    vector<string>insert_data(7);
+    for(int i = 0 ;i < cols.size() ;i++){
+       insert_data[col_to_index[cols[i]]] = values[i];
+    }
+    TABLE[table_name].push_back(insert_data);
+    
+}
+
+// 解析 DELETE 语句(条件只能一张表,不能两张表关联)
+void process_delete(string s){
+    // 对DELETE语句的不同部分进行分割
+    string table_str;
+    string where_str;
+
+    
+    int t = s.find("FROM");// table_str是FROM到WHERE之间的子字符串,即DELETE的表;
+    int w = s.find("WHERE") == -1 ? s.size() + 1 : s.find("WHERE");//  where_str是WHERE之后的子字符串(若无WHERE,则该where\_str为"")，即DELETE的条件
+
+    table_str = s.substr(t + 5, w - t - 5);
+    where_str = (w == s.size() + 1 ? "" : s.substr(w + 6));
+
+    // 分割成集合
+    vector<string> table =  splitClause(table_str, ","); // 表集合
+    vector<string> where = splitClause(where_str, "AND"); // 条件集合
+
+    // 将上一轮的数据清除
+    conditions_table1.clear();
+    conditions_table2.clear();
+    conditions_table_mutual.clear();
+    Col.clear();
+
+    for (auto it = TABLE[table[0]].begin(); it != TABLE[table[0]].end(); ) {
+    int flag = 1; // 条件是否成立标志
+
+    // 判断where之后的条件是否成立
+    for (auto& w : where) {
+        // 针对不同判别符处理
+        if (w.find("=") != std::string::npos) { // =
+            vector<string> t = process_condition_for_one_table(*it, w, "=");
+            string xx = t[0], yy = t[1];
+            if (xx != yy) {
+                flag = 0;
+                break;
+            }
+        } else if (w.find(">") != std::string::npos) { // >
+            vector<string> t = process_condition_for_one_table(*it, w, ">");
+            string xx = t[0], yy = t[1];
+            if (stoll(xx) <= stoll(yy)) {
+                flag = 0;
+                break;
+            }
+        } else if (w.find("<") != std::string::npos) { // <
+            vector<string> t = process_condition_for_one_table(*it, w, "<");
+            string xx = t[0], yy = t[1];
+            if (stoll(xx) >= stoll(yy)) {
+                flag = 0;
+                break;
+            }
+        }
+    }
+
+    // 如果条件成立,删除元素
+    if (flag) {
+        it = TABLE[table[0]].erase(it); // 删除元素并更新迭代器
+    } else {
+        ++it; // 仅在未删除时递增迭代器
+    }
+}
+
+
 }
 
 int main() {
     // 处理输入记录
     process_input();
+
     int n; // 查询语句的个数
     cin >> n;
     cin.ignore(); // 处理输入n后的换行符
+    
     // 处理查询
     while (n > 0) {
         n--;
         string s;
         // 读取每个查询
+
         while (getline(cin, s)) {
-            // 对查询语句的不同部分进行分割
-            string attribute_str;
-            string table_str;
-            string where_str;
-            int a = s.find("SELECT");
-            int t = s.find("FROM");
-            int w = s.find("WHERE") == -1 ? s.size() + 1 : s.find("WHERE");
-            attribute_str = s.substr(a + 7, t - a - 8);
-            table_str = s.substr(t + 5, w - t - 5);
-            where_str = (w == s.size() + 1 ? "" : s.substr(w + 6));
 
-            vector<string> table =  splitClause(table_str, ","); // 查询的表集合
-            vector<string> attribute =  splitClause(attribute_str, ","); // 查询的列集合
-            vector<string> where = splitClause(where_str, "AND"); // 查询的条件集合
-
-            conditions_table1.clear();
-            conditions_table2.clear();
-            conditions_table_mutual.clear();
-            if(table.size()==2){
-            for(auto&w:where){
-                vector<string>t;
-                string x,y,z;
-                if (w.find("=") != -1) { // = 
-                    t =  splitClause(w, "=");
-                    z = "=";
-                } else if (w.find(">") != -1) { // > 
-                    t =  splitClause(w, ">");
-                    z = ">";
-                } else if (w.find("<") != -1) {// < 
-                    t =  splitClause(w, "<");
-                    z = "<";
-                }
-                x = t[0],y = t[1];
-                if((y[0] == '\"'&&y.back()=='\"' )){
-                    y = y.substr(1,y.size()-2);
-                    vector<string>temp = splitClause(x,".");
-                    if(temp.size()==1){
-                        if(col_exist[table[0]][col_to_index[temp[0]]]){
-                            conditions_table1.push_back({x,y,z});
-                        }
-                        else {
-                            conditions_table2.push_back({x,y,z});
-                        }
-                    }
-                    else {
-                        if(table[0]==temp[0]){
-                            conditions_table1.push_back({temp[1],y,z});
-                        }
-                        else {
-                            conditions_table2.push_back({temp[1],y,z});
-                        }
-                    }
-                }
-                else if(!col_to_index.count(y)&&y.find(".")==-1){
-                    vector<string>temp = splitClause(x,".");
-                    if(temp.size()==1){
-                        if(col_exist[table[0]][col_to_index[temp[0]]]){
-                            conditions_table1.push_back({x,y,z});
-                        }
-                        else {
-                            conditions_table2.push_back({x,y,z});
-                        }
-                    }
-                    else {
-                        if(table[0]==temp[0]){
-                            conditions_table1.push_back({temp[1],y,z});
-                        }
-                        else {
-                            conditions_table2.push_back({temp[1],y,z});
-                        }
-                    }
-                }
-                else{
-                    int t1,t2;
-                    string c1,c2;
-                    vector<string>temp = splitClause(x,".");
-                    
-                    if(temp.size()==1){
-                        if(col_exist[table[0]][col_to_index[temp[0]]]){
-                            t1 = 0;
-                            c1 = x;
-                        }
-                        else {
-                            t1 = 1;
-                            c1 = x;
-                        }
-                    }
-                    else {
-                        if(table[0]==temp[0]){
-                            t1 = 0;
-                            c1 = temp[1];
-                        }
-                        else {
-                            t1 = 1;
-                            c1 = temp[1];
-                        }
-                    }
-
-                    temp = splitClause(y,".");
-                    
-                    if(temp.size()==1){
-                        if(col_exist[table[0]][col_to_index[temp[0]]]){
-                            t2 = 0;
-                            c2 = y;
-                        }
-                        else {
-                            t2 = 1;
-                            c2 = y;
-                        }
-                    }
-                    else {
-                        if(table[0]==temp[0]){
-                            t2 = 0;
-                            c2 = temp[1];
-                        }
-                        else {
-                            t2 = 1;
-                            c2 = temp[1];
-                        }
-                    }
-                conditions_table_mutual.push_back(make_pair(t1,c1));
-                conditions_table_mutual.push_back(make_pair(t2,c2));
-                conditions_table_mutual.push_back(make_pair(0,z));
-                } 
-            }
-            Col.clear();
-            if(attribute[0]!="*"){
-                for (int i = 0; i < attribute.size(); i++) {
-                        string a = attribute[i];
-                        // 判断 TABLE.COLUMN ,输出对应TABLE的COLUMN
-                        vector<string> t =  splitClause(a, ".");
-                        int x,y;
-                        if (t.size() == 1) {
-                            y = col_to_index[t[0]];
-                            x = col_exist[table[0]][y]?0:1;
-                        } else {
-                            y = col_to_index[t[1]];
-                            x = t[0] == table[0]? 0:1; 
-                        }
-                        Col.push_back({x,y});
-                    }
+            // 对insert指令解析处理 INSERT INTO table_name (column1, column2, column3, ...) VALUES (value1, value2, value3, ...);
+            if(s.size()>11&&s.substr(0,11) == "INSERT INTO"){
+                process_insert(s);
+                break;
             }
 
+            //对delete指令解析处理 DELETE FROM table_name WHERE condition;
+            if(s.size()>11&&s.substr(0,11) == "DELETE FROM"){
+                process_delete(s);
+                break;
             }
-            //cout<<conditions_table1.size();
-            process_queries(table, attribute, where);
+
+            // 对select指令解析处理
+            process_select(s);
             break;
         }
     }

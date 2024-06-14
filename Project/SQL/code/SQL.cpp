@@ -465,6 +465,131 @@ void preprocess_queries_for_two_table(const vector<string>& table, const vector<
     }
 }
 
+void process_select(string s){
+    // 对查询语句的不同部分进行分割
+    string attribute_str;
+    string table_str;
+    string where_str;
+
+    int a = s.find("SELECT");// attribute_str是SELECT到FROM之间的子字符串,即查询的列；
+    int t = s.find("FROM");// table_str是FROM到WHERE之间的子字符串,即查询的表;
+    int w = s.find("WHERE") == -1 ? s.size() + 1 : s.find("WHERE");//  where_str是WHERE之后的子字符串(若无WHERE,则该where\_str为"")，即查询的条件
+    attribute_str = s.substr(a + 7, t - a - 8);
+    table_str = s.substr(t + 5, w - t - 5);
+    where_str = (w == s.size() + 1 ? "" : s.substr(w + 6));
+
+    // 分割成集合
+    vector<string> table =  splitClause(table_str, ","); // 查询的表集合
+    vector<string> attribute =  splitClause(attribute_str, ","); // 查询的列集合
+    vector<string> where = splitClause(where_str, "AND"); // 查询的条件集合
+
+    // 将上一轮查询的数据清除
+    conditions_table1.clear();
+    conditions_table2.clear();
+    conditions_table_mutual.clear();
+    Col.clear();
+
+    // 对针对两张表的查询的条件与查询的列预处理
+    if(table.size()==2){
+        preprocess_queries_for_two_table(table,attribute,where);
+    }
+
+    // 处理查询并输出查询结果
+    process_queries(table, attribute, where);
+}
+
+// 解析 INSERT 语句
+void process_insert(const std::string& s) {
+    std::string table_name;
+    std::string col_names;
+    std::string values_names;
+    size_t values_pos = s.find("VALUES");
+    size_t col_pos = s.find("(");
+
+    // 分割出表名 列名 和 值
+    table_name = s.substr(12, col_pos - 12);
+    col_names = s.substr(col_pos,values_pos-col_pos);
+    values_names = s.substr(values_pos + 7); 
+    // 去除空格
+    table_name = removeSpaces(table_name);
+    col_names = removeSpaces(col_names);
+    values_names = removeSpaces(values_names);
+    // 去除括号
+    col_names = col_names.substr(1,col_names.size()-2);
+    values_names = values_names.substr(1,values_names.size()-2);
+
+    vector<string>cols = splitClause(col_names,",");
+    vector<string>values = splitClause(values_names,",");
+
+    // 插入数据
+    vector<string>insert_data(7);
+    for(int i = 0 ;i < cols.size() ;i++){
+       insert_data[col_to_index[cols[i]]] = values[i];
+    }
+    TABLE[table_name].push_back(insert_data);
+    
+}
+
+// 解析 DELETE 语句(条件只能一张表,不能两张表关联)
+void process_delete(string s){
+    // 对DELETE语句的不同部分进行分割
+    string table_str;
+    string where_str;
+
+    
+    int t = s.find("FROM");// table_str是FROM到WHERE之间的子字符串,即DELETE的表;
+    int w = s.find("WHERE") == -1 ? s.size() + 1 : s.find("WHERE");//  where_str是WHERE之后的子字符串(若无WHERE,则该where\_str为"")，即DELETE的条件
+
+    table_str = s.substr(t + 5, w - t - 5);
+    where_str = (w == s.size() + 1 ? "" : s.substr(w + 6));
+
+    // 分割成集合
+    vector<string> table =  splitClause(table_str, ","); // 表集合
+    vector<string> where = splitClause(where_str, "AND"); // 条件集合
+
+    // 将上一轮的数据清除
+    conditions_table1.clear();
+    conditions_table2.clear();
+    conditions_table_mutual.clear();
+    Col.clear();
+
+    for (auto it = TABLE[table[0]].begin(); it != TABLE[table[0]].end(); ) {
+    int flag = 1; // 条件是否成立标志
+
+    // 判断where之后的条件是否成立
+    for (auto& w : where) {
+        // 针对不同判别符处理
+        if (w.find("=") != std::string::npos) { // =
+            vector<string> t = process_condition_for_one_table(*it, w, "=");
+            string xx = t[0], yy = t[1];
+            if (xx != yy) {
+                flag = 0;
+                break;
+            }
+        } else if (w.find(">") != std::string::npos) { // >
+            vector<string> t = process_condition_for_one_table(*it, w, ">");
+            string xx = t[0], yy = t[1];
+            if (stoll(xx) <= stoll(yy)) {
+                flag = 0;
+                break;
+            }
+        } else if (w.find("<") != std::string::npos) { // <
+            vector<string> t = process_condition_for_one_table(*it, w, "<");
+            string xx = t[0], yy = t[1];
+            if (stoll(xx) >= stoll(yy)) {
+                flag = 0;
+                break;
+            }
+        }
+    }
+    // 如果条件成立,删除元素
+    if (flag) {
+        it = TABLE[table[0]].erase(it); // 删除元素并更新迭代器
+    } else {
+        ++it; // 仅在未删除时递增迭代器
+    }
+}
+}
 
 int main() {
     // 处理输入记录
@@ -482,36 +607,20 @@ int main() {
 
         while (getline(cin, s)) {
 
-            // 对查询语句的不同部分进行分割
-            string attribute_str;
-            string table_str;
-            string where_str;
-
-            int a = s.find("SELECT");// attribute_str是SELECT到FROM之间的子字符串,即查询的列；
-            int t = s.find("FROM");// table_str是FROM到WHERE之间的子字符串,即查询的表;
-            int w = s.find("WHERE") == -1 ? s.size() + 1 : s.find("WHERE");//  where_str是WHERE之后的子字符串(若无WHERE,则该where\_str为"")，即查询的条件
-            attribute_str = s.substr(a + 7, t - a - 8);
-            table_str = s.substr(t + 5, w - t - 5);
-            where_str = (w == s.size() + 1 ? "" : s.substr(w + 6));
-
-            // 分割成集合
-            vector<string> table =  splitClause(table_str, ","); // 查询的表集合
-            vector<string> attribute =  splitClause(attribute_str, ","); // 查询的列集合
-            vector<string> where = splitClause(where_str, "AND"); // 查询的条件集合
-
-            // 将上一轮查询的数据清除
-            conditions_table1.clear();
-            conditions_table2.clear();
-            conditions_table_mutual.clear();
-            Col.clear();
-
-            // 对针对两张表的查询的条件与查询的列预处理
-            if(table.size()==2){
-                preprocess_queries_for_two_table(table,attribute,where);
+            // 对insert指令解析处理 INSERT INTO table_name (column1, column2, column3, ...) VALUES (value1, value2, value3, ...);
+            if(s.size()>11&&s.substr(0,11) == "INSERT INTO"){
+                process_insert(s);
+                break;
             }
 
-            // 处理查询并输出查询结果
-            process_queries(table, attribute, where);
+            //对delete指令解析处理 DELETE FROM table_name WHERE condition;
+            if(s.size()>11&&s.substr(0,11) == "DELETE FROM"){
+                process_delete(s);
+                break;
+            }
+
+            // 对select指令解析处理
+            process_select(s);
             break;
         }
     }
